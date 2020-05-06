@@ -1,16 +1,15 @@
 <?php
+
 namespace app\modules\v1\controllers;
 
 use app\helpers\GetRates;
 use app\models\CurrencyRate;
-use Yii;
 use yii\filters\ContentNegotiator;
 use yii\filters\VerbFilter;
 use yii\rest\Controller;
-use yii\web\NotFoundHttpException;
 use yii\web\Response;
 
-class DefaultController extends Controller
+class ApiController extends Controller
 {
     /**
      * {@inheritdoc}
@@ -52,7 +51,6 @@ class DefaultController extends Controller
      * Displays a filtered list by date or currency code of CurrencyRate models.
      * @param integer $id
      * @return mixed
-     * @throws NotFoundHttpException if the model cannot be found
      */
     public function actionFilter($date = null, $code = null)
     {
@@ -65,59 +63,54 @@ class DefaultController extends Controller
             $date = date("Y-m-d", strtotime('previous friday', strtotime($date)));
         }
 
-        $data = CurrencyRate::find()->where(['date' => $date])->andFilterWhere(['code' => $code])->all();
+        $data         = CurrencyRate::find()->where(['date' => $date])->andFilterWhere(['code' => $code])->all();
+        $currencyList = [];
 
-        return $data;
-    }
-
-    /**
-     * Finds the CurrencyRate model based on its primary key value.
-     * If the model is not found, a 404 HTTP exception will be thrown.
-     * @param integer $id
-     * @return CurrencyRate the loaded model
-     * @throws NotFoundHttpException if the model cannot be found
-     */
-    protected function _findModel($id)
-    {
-        if (($model = CurrencyRate::findOne($id)) !== null) {
-            return $model;
+        foreach ($data as $currency) {
+            $code                = $currency[code];
+            $rate                = $currency[rate];
+            $currencyList[$code] = $rate;
         }
 
-        throw new NotFoundHttpException(Yii::t('app', 'The requested page does not exist.'));
+        if ($data === []) {
+            return ['message' => 'No Currency data available for chosen day'];
+        } else {
+            if (count($currencyList) > 1) {
+                return ['date' => $date, 'rate' => $currencyList];
+            } else {
+                return ['date' => $date, $code => $currencyList[$code]];
+            }
+        };
     }
 
-    //------------------------------------------------------------------------------------------------//
-    // HELPERS
-    //------------------------------------------------------------------------------------------------//
-
     /**
-     * Delets the exchange rates found in the db
-     * for the specified year
-     * Fetches new yearly exchange rates from BNR for
-     * the specified year
+     * Delets the exchange rates found in the db for the specified year
+     * Fetches new yearly exchange rates from BNR for the specified year
      * and writes them in the db
+     * @param integer $year
+     * @return mixed
      */
     public function actionYearly($year)
     {
-        GetRates::getYearly($year);
+        return GetRates::getYearly($year);
     }
 
     /**
-     * Fetches last 10 days of exchange rates from BNR
-     * checks for any that already exist in the db
-     * and writes the ones missing in the db
+     * Fetches last 10 days of exchange rates from BNR checks for any
+     * that already exist in the db and writes the ones missing in the db
+     * @return mixed
      */
     public function actionTendays()
     {
-        GetRates::getLastTenDays();
+        return GetRates::getLastTenDays();
     }
 
     /**
-     * Fetches daily exchange rates from
-     * BNR and writes them in the db
+     * Fetches daily exchange rates from BNR and writes them in the db
+     * @return mixed
      */
     public function actionDaily()
     {
-        GetRates::getDaily();
+        return GetRates::getDaily();
     }
 }

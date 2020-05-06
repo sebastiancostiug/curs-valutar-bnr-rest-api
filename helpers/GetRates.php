@@ -17,14 +17,14 @@ class GetRates
         $xml = new \DOMDocument();
 
         if ($period === "daily") {
-            $url = "https://bnrrr.ro/nbrfxrates.xml";
+            $url = "https://bnr.ro/nbrfxrates.xml";
         } elseif ($period === "tendays") {
             $url = "https://bnr.ro/nbrfxrates10days.xml";
         } else {
             $url = "https://bnr.ro/files/xml/years/nbrfxrates" . $year . ".xml";
         }
 
-        $myList = ($xml->load($url)) ? $xml->getElementsByTagName("Cube") : "not valid xml";
+        $myList = ($xml->load($url) !== false) ? $xml->getElementsByTagName("Cube") : "not valid xml";
 
         return $myList;
     }
@@ -51,9 +51,17 @@ class GetRates
         if (is_string($xml)) {
             var_dump($xml);
         } else {
-            $dailyInfo = $xml[0]->getElementsByTagName("Rate");
+            $dailyInfo      = $xml[0]->getElementsByTagName("Rate");
+            $skippedCount   = 0;
+            $addedCount     = 0;
+            $processedCount = 0;
+            $messages       = [];
             foreach ($dailyInfo as $rate) {
-                $existingValue = CurrencyRate::find()->where(['date' => $xml[0]->attributes[0]->value])->andFilterWhere(['code' => $rate->attributes[0]->value])->one();
+                $existingValue = CurrencyRate::find()->
+                    where(['date' => $xml[0]->attributes[0]->value])->
+                    andFilterWhere(['code' => $rate->attributes[0]->value])->
+                    one();
+                $processedCount++;
                 if (!$existingValue) {
                     $model             = new CurrencyRate();
                     $model->code       = $rate->attributes[0]->value;
@@ -65,16 +73,22 @@ class GetRates
                     if ($model->save()) {
                         $response['isSuccess'] = 201;
                         $response['message']   = 'Currency rates added';
-                        echo "Currency rates added\n";
+                        array_push($messages, $response['message']);
+                        $addedCount++;
                     } else {
                         $response['hasErrors'] = $model->hasErrors();
                         $response['errors']    = $model->getErrors();
-                        echo "Model has errors\n";
+                        array_push($messages, $response['errors']);
                     }
                 } else {
-                    echo "Currency already exists\n";
+                    $skippedCount++;
                 }
             }
+            return [
+                'Processed Entries'               => ($messages === []) ? $processedCount : $messages,
+                'New Entries added to DB'         => $addedCount,
+                'Skipped Entries - already in DB' => $skippedCount,
+            ];
         }
     }
 
@@ -91,10 +105,17 @@ class GetRates
         if (is_string($myList)) {
             var_dump($myList);
         } else {
+            $skippedCount   = 0;
+            $processedCount = 0;
+            $addedCount     = 0;
             foreach ($myList as $day) {
                 $dailyInfo = $day->getElementsByTagName("Rate");
                 foreach ($dailyInfo as $item) {
-                    $existingValue = CurrencyRate::find()->where(['date' => $day->attributes[0]->value])->andFilterWhere(['code' => $item->attributes[0]->value])->one();
+                    $existingValue = CurrencyRate::find()->
+                        where(['date' => $day->attributes[0]->value])->
+                        andFilterWhere(['code' => $item->attributes[0]->value])->
+                        one();
+                    $processedCount++;
                     if (!$existingValue) {
                         $code               = $item->attributes[0]->value;
                         ${"currency-$code"} = [];
@@ -104,6 +125,9 @@ class GetRates
 
                         array_push(${"currency-$code"}, $code, $multiplier, $rate, $date);
                         array_push($tendays, ${"currency-$code"});
+                        $addedCount++;
+                    } else {
+                        $skippedCount++;
                     }
                 }
             }
@@ -113,6 +137,11 @@ class GetRates
                 ['code', 'multiplier', 'rate', 'date'],
                 $tendays);
             $addMissingDays->execute();
+            return [
+                'Processed Entries'               => $processedCount,
+                'New Entries added to DB'         => $addedCount,
+                'Skipped Entries - already in DB' => $skippedCount,
+            ];
         }
     }
 
@@ -129,6 +158,7 @@ class GetRates
             self::__deleteEntries($year);
 
             ${"year-$year"} = [];
+            $addedCount     = 0;
 
             foreach ($myList as $day) {
                 $dailyInfo = $day->getElementsByTagName("Rate");
@@ -141,6 +171,7 @@ class GetRates
 
                     array_push(${"currency-$code"}, $code, $multiplier, $rate, $date);
                     array_push(${"year-$year"}, ${"currency-$code"});
+                    $addedCount++;
                 }
             }
 
@@ -149,6 +180,10 @@ class GetRates
                 ${"year-$year"});
             $addNewYearlyEntries->execute();
             // var_dump(${"year-$year"});
+            return [
+                'Entries written in DB' => $addedCount,
+            ];
+
         }
     }
 }
