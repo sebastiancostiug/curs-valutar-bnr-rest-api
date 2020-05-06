@@ -17,7 +17,7 @@ class GetRates
         $xml = new \DOMDocument();
 
         if ($period === "daily") {
-            $url = "https://bnr.ro/nbrfxrates.xml";
+            $url = "https://bnrrr.ro/nbrfxrates.xml";
         } elseif ($period === "tendays") {
             $url = "https://bnr.ro/nbrfxrates10days.xml";
         } else {
@@ -88,8 +88,8 @@ class GetRates
         $myList  = self::__fetchXml('tendays');
         $tendays = [];
 
-        if (is_string($xml)) {
-            var_dump($xml);
+        if (is_string($myList)) {
+            var_dump($myList);
         } else {
             foreach ($myList as $day) {
                 $dailyInfo = $day->getElementsByTagName("Rate");
@@ -123,8 +123,8 @@ class GetRates
     {
         $myList = self::__fetchXml('yearly', $year);
 
-        if (is_string($xml)) {
-            var_dump($xml);
+        if (is_string($myList)) {
+            var_dump($myList);
         } else {
             self::__deleteEntries($year);
 
