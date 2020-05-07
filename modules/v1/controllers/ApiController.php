@@ -4,13 +4,20 @@ namespace app\modules\v1\controllers;
 
 use app\helpers\GetRates;
 use app\models\CurrencyRate;
+use Yii;
 use yii\filters\ContentNegotiator;
 use yii\filters\VerbFilter;
+use yii\helpers\Json;
 use yii\rest\Controller;
 use yii\web\Response;
 
 class ApiController extends Controller
 {
+    public function init()
+    {
+        parent::init();
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -27,10 +34,7 @@ class ApiController extends Controller
                 'class'   => VerbFilter::className(),
                 'actions' => [
                     'index'  => ['GET', 'POST'],
-                    'view'   => ['GET'],
-                    'create' => ['POST'],
-                    'update' => ['PUT'],
-                    'delete' => ['DELETE'],
+                    'filter' => ['GET', 'POST'],
                 ],
             ],
         ];
@@ -42,9 +46,7 @@ class ApiController extends Controller
      */
     public function actionIndex()
     {
-        $data = CurrencyRate::find()->all();
-
-        return $data;
+        return ['message' => 'nothing here'];
     }
 
     /**
@@ -54,6 +56,8 @@ class ApiController extends Controller
      */
     public function actionFilter($date = null, $code = null)
     {
+        self::__checkAuth();
+
         if (!$date) {
             (date('H') <= 13) ?
             $date = date("Y-m-d", strtotime('-1 days')) :
@@ -63,13 +67,16 @@ class ApiController extends Controller
             $date = date("Y-m-d", strtotime('previous friday', strtotime($date)));
         }
 
-        $data         = CurrencyRate::find()->where(['date' => $date])->andFilterWhere(['code' => $code])->all();
+        $data = CurrencyRate::find()->
+            where(['date' => $date])->
+            andFilterWhere(['code' => $code])->
+            all();
         $currencyList = [];
 
         foreach ($data as $currency) {
-            $code                = $currency[code];
-            $rate                = $currency[rate];
-            $currencyList[$code] = $rate;
+            $innerCode                = $currency['code'];
+            $innerRate                = $currency['rate'];
+            $currencyList[$innerCode] = $innerRate;
         }
 
         if ($data === []) {
@@ -78,7 +85,7 @@ class ApiController extends Controller
             if (count($currencyList) > 1) {
                 return ['date' => $date, 'rate' => $currencyList];
             } else {
-                return ['date' => $date, $code => $currencyList[$code]];
+                return ['date' => $date, strtoupper($code) => $currencyList[strtoupper($code)]];
             }
         };
     }
@@ -113,4 +120,73 @@ class ApiController extends Controller
     {
         return GetRates::getDaily();
     }
+
+    /**
+     * Helper Functions
+     */
+
+    private function __checkAuth()
+    {
+        $result = array();
+
+        if (isset($_SERVER["PHP_AUTH_USER"]) && isset($_SERVER["PHP_AUTH_PW"])) { // PHP_AUTH
+            $apiUser = $_SERVER["PHP_AUTH_USER"];
+            $apiKey  = $_SERVER["PHP_AUTH_PW"];
+        } elseif (isset($_SERVER["HTTP_AUTHORIZATION"])) { // HTTP_AUTHORIZATION
+            if (preg_match('/Basic\s+(.*)$/i', $_SERVER["HTTP_AUTHORIZATION"], $matches)) {
+                list($apiUser, $apiKey) = explode(':', base64_decode($matches[1]));
+            }
+        } elseif (isset($_SERVER["REDIRECT_HTTP_AUTHORIZATION"])) { // REDIRECT_HTTP_AUTHORIZATION
+            if (preg_match('/Basic\s+(.*)$/i', $_SERVER["REDIRECT_HTTP_AUTHORIZATION"], $matches)) {
+                list($apiUser, $apiKey) = explode(':', base64_decode($matches[1]));
+            }
+        } elseif (isset($_SERVER["REDIRECT_REDIRECT_HTTP_AUTHORIZATION"])) { // REDIRECT_REDIRECT_HTTP_AUTHORIZATION
+            if (preg_match('/Basic\s+(.*)$/i', $_SERVER["REDIRECT_REDIRECT_HTTP_AUTHORIZATION"], $matches)) {
+                list($apiUser, $apiKey) = explode(':', base64_decode($matches[1]));
+            }
+        }
+
+        if (isset($apiUser) && isset($apiKey) && (self::getKey($apiUser, $apiKey))) {
+            $result['status'] = 'success';
+            return true;
+        } else {
+            $result['status']  = 'error';
+            $result['message'] = Yii::t('app', 'Invalid credentials!');
+            $this->__sendResponse('401', $result);
+        }
+    }
+
+    private function __sendResponse($status = 200, $body = '', $contentType = 'application/json')
+    {
+        // Header
+        header('HTTP/1.1 ' . $status . ' ' . $this->__getStatusCodeMessage($status));
+        header('Content-type: ' . $contentType);
+        echo Json::encode($body);
+        Yii::$app->end();
+    }
+
+    public static function getKey($user, $key)
+    {
+        try {
+            $keys = Yii::$app->params['keys'];
+        } catch (Exception $e) {
+            $keys = null;
+        }
+        return ($key === $keys[$user]) ? true : false;
+    }
+
+    private function __getStatusCodeMessage($status)
+    {
+        $codes = array(
+            200 => 'OK',
+            400 => 'Bad Request',
+            401 => 'Unauthorized',
+            403 => 'Forbidden',
+            404 => 'Not Found',
+            500 => 'Internal Server Error',
+            501 => 'Not Implemented',
+        );
+        return (isset($codes[$status])) ? $codes[$status] : '';
+    }
+
 }

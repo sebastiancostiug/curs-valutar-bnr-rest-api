@@ -72,7 +72,7 @@ class GetRates
 
                     if ($model->save()) {
                         $response['isSuccess'] = 201;
-                        $response['message']   = 'Currency rates added';
+                        $response['message']   = "$model->code rate added";
                         array_push($messages, $response['message']);
                         $addedCount++;
                     } else {
