@@ -75,7 +75,7 @@ class ApiController extends Controller
 
         foreach ($data as $currency) {
             $innerCode                = $currency['code'];
-            $innerRate                = $currency['rate'];
+            $innerRate                = $currency['rate'] / $currency['multiplier'];
             $currencyList[$innerCode] = $innerRate;
         }
 

@@ -44,7 +44,7 @@ class SiteController extends Controller
      */
     public function actionIndex()
     {
-        $data = CurrencyRate::find()->all();
+        $data = ['Site index - Nothing here'];
 
         return $data;
     }

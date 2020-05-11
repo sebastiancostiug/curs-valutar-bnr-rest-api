@@ -10,7 +10,7 @@ RestAPI will follow [OpenAPI Specification, version 3](http://spec.openapis.org/
 
 # [API Host and Base URL](https://swagger.io/docs/specification/api-host-and-base-path)
 
--   https://devdata.frontline.ro/api/v1/
+- https://devdata.frontline.ro/v1/
 
 # Methods
 
@@ -18,8 +18,8 @@ RestAPI will follow [OpenAPI Specification, version 3](http://spec.openapis.org/
 
 #### 1. All rates
 
--   https://devdata.frontline.ro/api/v1/filter/2012-01-5
--   Example response:
+- https://devdata.frontline.ro/v1/filter/2012-01-5
+- Example response:
 
 ```
 {
@@ -42,12 +42,10 @@ RestAPI will follow [OpenAPI Specification, version 3](http://spec.openapis.org/
 }
 ```
 
--   Example request: https://legacy.openapi.ro/api/exchange/all.json?date=2012-01-5
-
 #### 2. Single rate
 
--   https://devdata.frontline.ro/api/v1/filter/2012-01-5/EUR
--   Example response:
+- https://devdata.frontline.ro/v1/filter/2012-01-5/EUR
+- Example response:
 
 ```
 {
@@ -55,5 +53,3 @@ RestAPI will follow [OpenAPI Specification, version 3](http://spec.openapis.org/
     "rate": "4.3398"
 }
 ```
-
--   Example request: https://legacy.openapi.ro/api/exchange/eur.json?date=2012-01-5

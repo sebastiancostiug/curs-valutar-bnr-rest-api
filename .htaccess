@@ -1,5 +1,0 @@
-Options +FollowSymLinks
-RewriteEngine On
-RewriteCond %{HTTP_HOST} datadev.frontline.ro$ [NC]
-RewriteCond %{HTTP_HOST} !web
-RewriteRule ^(.*)$ http://datadev.frontline.ro/web/$1 [R=301,L]
