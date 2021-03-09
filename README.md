@@ -10,7 +10,7 @@ RestAPI will follow [OpenAPI Specification, version 3](http://spec.openapis.org/
 
 # [API Host and Base URL](https://swagger.io/docs/specification/api-host-and-base-path)
 
-- https://localhost/v1/
+- http://localhost/v1/
 
 # Methods
 
