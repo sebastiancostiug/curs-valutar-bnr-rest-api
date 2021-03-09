@@ -10,7 +10,7 @@ RestAPI will follow [OpenAPI Specification, version 3](http://spec.openapis.org/
 
 # [API Host and Base URL](https://swagger.io/docs/specification/api-host-and-base-path)
 
-- https://devdata.frontline.ro/v1/
+- https://localhost/v1/
 
 # Methods
 
@@ -18,7 +18,7 @@ RestAPI will follow [OpenAPI Specification, version 3](http://spec.openapis.org/
 
 #### 1. All rates
 
-- https://devdata.frontline.ro/v1/filter/2012-01-5
+- https://localhost/v1/filter/2012-01-5
 - Example response:
 
 ```
