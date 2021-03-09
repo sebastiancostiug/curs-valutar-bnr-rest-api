@@ -18,7 +18,7 @@ RestAPI will follow [OpenAPI Specification, version 3](http://spec.openapis.org/
 
 #### 1. All rates
 
-- https://localhost/v1/filter/2012-01-5
+- http://localhost/v1/filter/2012-01-5
 - Example response:
 
 ```
@@ -44,7 +44,7 @@ RestAPI will follow [OpenAPI Specification, version 3](http://spec.openapis.org/
 
 #### 2. Single rate
 
-- https://devdata.frontline.ro/v1/filter/2012-01-5/EUR
+- http://localhost/v1/filter/2012-01-5/EUR
 - Example response:
 
 ```
